@@ -54,7 +54,12 @@ constexpr int WarmupConsts::kMaxNumRecords;
 Status RunSavedModelWarmup(
     const ModelWarmupOptions& model_warmup_options, const string export_dir,
     std::function<Status(PredictionLog)> warmup_request_executor) {
+
+  LOG(INFO) << "Starting to warmup..." ;
+
+      // begin run  SavedModelWarmup
   const uint64_t start_microseconds = EnvTime::NowMicros();
+  // 找 warmup 文件
   const string warmup_path =
       io::JoinPath(export_dir, kSavedModelAssetsExtraDirectory,
                    WarmupConsts::kRequestsFileName);
@@ -63,24 +68,26 @@ Status RunSavedModelWarmup(
     // Having warmup data is optional, return OK
     return OkStatus();
   }
-  const int num_request_iterations = [&]() {
-    if (model_warmup_options.has_num_request_iterations()) {
-      return model_warmup_options.num_request_iterations().value();
-    }
-    // Default of 1.
-    return 1;
-  }();
+  // 预热请求次数
+  const int num_request_iterations =1;
+  // const int num_request_iterations = [&]() {
+  //   if (model_warmup_options.has_num_request_iterations()) {
+  //     return model_warmup_options.num_request_iterations().value();
+  //   }
+  //   // Default of 1.
+  //   return 1;
+  // }();
   LOG(INFO) << "Starting to read warmup data for model at " << warmup_path
             << " with model-warmup-options "
             << model_warmup_options.DebugString();
   std::unique_ptr<tensorflow::RandomAccessFile> tf_record_file;
   TF_RETURN_IF_ERROR(tensorflow::Env::Default()->NewRandomAccessFile(
       warmup_path, &tf_record_file));
-
-  int num_model_warmup_threads =
-      model_warmup_options.has_num_model_warmup_threads()
-          ? std::max(model_warmup_options.num_model_warmup_threads().value(), 1)
-          : 1;
+  int num_model_warmup_threads =1;
+  // int num_model_warmup_threads =
+  //     model_warmup_options.has_num_model_warmup_threads()
+  //         ? std::max(model_warmup_options.num_model_warmup_threads().value(), 1)
+  //         : 1;
   std::unique_ptr<tensorflow::io::SequentialRecordReader> tf_record_file_reader;
   Status status;
   int num_warmup_records = 0;
@@ -88,25 +95,37 @@ Status RunSavedModelWarmup(
     tf_record_file_reader.reset(
         new tensorflow::io::SequentialRecordReader(tf_record_file.get()));
     tstring record;
-    status = tf_record_file_reader->ReadRecord(&record);
+    status = tf_record_file_reader->ReadRecord(&record);//<1ms
     tensorflow::serving::PredictionLog prediction_log;
-    while (status.ok()) {
-      if (!prediction_log.ParseFromArray(record.data(), record.size())) {
+    //*********************
+    if (!prediction_log.ParseFromArray(record.data(), record.size())) {
         return errors::InvalidArgument(strings::StrCat(
             "Failed to parse warmup record: ", record, " from ", warmup_path));
       }
+    
+    const uint64_t start1 = EnvTime::NowMicros();
+    TF_RETURN_IF_ERROR(warmup_request_executor(prediction_log));
+    LOG(INFO) << "kkq:warmup_request_executor: " << GetLatencyMicroseconds(start1);
 
-      for (int i = 0; i < num_request_iterations; ++i) {
-        TF_RETURN_IF_ERROR(warmup_request_executor(prediction_log));
-      }
-      ++num_warmup_records;
-      if (num_warmup_records > WarmupConsts::kMaxNumRecords) {
-        return errors::InvalidArgument(
-            "Number of warmup records exceeds the maximum (",
-            WarmupConsts::kMaxNumRecords, ") at ", warmup_path);
-      }
-      status = tf_record_file_reader->ReadRecord(&record);
-    }
+    //*********************
+
+    // while (status.ok()) {
+    //   if (!prediction_log.ParseFromArray(record.data(), record.size())) {
+    //     return errors::InvalidArgument(strings::StrCat(
+    //         "Failed to parse warmup record: ", record, " from ", warmup_path));
+    //   }
+
+    //   for (int i = 0; i < num_request_iterations; ++i) {
+    //     TF_RETURN_IF_ERROR(warmup_request_executor(prediction_log));
+    //   }
+    //   ++num_warmup_records;
+    //   if (num_warmup_records > WarmupConsts::kMaxNumRecords) {
+    //     return errors::InvalidArgument(
+    //         "Number of warmup records exceeds the maximum (",
+    //         WarmupConsts::kMaxNumRecords, ") at ", warmup_path);
+    //   }
+    //   status = tf_record_file_reader->ReadRecord(&record);
+    // }
   } else {
     struct SharedState {
       ::tensorflow::mutex mu;

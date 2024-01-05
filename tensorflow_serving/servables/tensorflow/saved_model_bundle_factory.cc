@@ -111,6 +111,10 @@ Status SavedModelBundleFactory::CreateSavedModelBundle(
 Status SavedModelBundleFactory::InternalCreateSavedModelBundle(
     const absl::optional<Loader::Metadata>& metadata, const string& path,
     std::unique_ptr<SavedModelBundle>* bundle) {
+
+  LOG(INFO) << "****************kkq:this is from SavedModelBundleFactory!" ;
+
+  
   bundle->reset(new SavedModelBundle);
   std::unordered_set<string> saved_model_tags(
       config_.saved_model_tags().begin(), config_.saved_model_tags().end());
@@ -119,6 +123,7 @@ Status SavedModelBundleFactory::InternalCreateSavedModelBundle(
   if (saved_model_tags.empty()) {
     saved_model_tags.insert(kSavedModelTagServe);
   }
+  LOG(INFO) << "****************kkq:this is from SavedModelBundleFactory! 2" ;
   const auto& session_options = [&]() {
     auto result = GetSessionOptions(config_);
     if (metadata.has_value()) {
@@ -140,10 +145,13 @@ Status SavedModelBundleFactory::InternalCreateSavedModelBundle(
         path, bundle->get(), session_options, num_tflite_pools,
         config_.num_tflite_interpreters_per_pool()));
   } else {
+    LOG(INFO) << "****************kkq:this is from SavedModelBundleFactory! 3" ;
     TF_RETURN_IF_ERROR(session_bundle::LoadSessionBundleOrSavedModelBundle(
         session_options, GetRunOptions(config_), path, saved_model_tags,
         bundle->get()));
   }
+
+  
   if (config_.remove_unused_fields_from_bundle_metagraph()) {
     // Save memory by removing fields in MetaGraphDef proto message stored
     // in the bundle that we never use. Notably the unused graphdef submessage

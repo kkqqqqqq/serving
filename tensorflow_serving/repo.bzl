@@ -12,6 +12,9 @@ build: --action_env TF_REVISION="<git commit hash>"
   * `TF_REVISION`: tensorflow revision override (git commit hash)
 """
 
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+
 _TF_REVISION = "TF_REVISION"
 
 def _tensorflow_http_archive(ctx):
@@ -47,3 +50,9 @@ tensorflow_http_archive = repository_rule(
         "patch": attr.label(),
     },
 )
+
+def deps():
+    native.new_local_repository(
+        name = "org_tensorflow",
+        path = "deps/tensorflow",
+    )   

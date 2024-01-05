@@ -98,10 +98,10 @@ fi
 [[ "${CMD}" = "" ]] && usage
 [[ ! -x $(command -v docker) ]] && echo "ERROR: 'docker' command missing from PATH." && usage
 
-echo "== Pulling docker image: ${IMAGE}"
-if ! docker pull ${IMAGE} ; then
-  echo "WARNING: Failed to docker pull image ${IMAGE}"
-fi
+#echo "== Pulling docker image: ${IMAGE}"
+#if ! docker pull ${IMAGE} ; then
+#   echo "WARNING: Failed to docker pull image ${IMAGE}"
+# fi
 
 echo "== Running cmd: ${CMD}"
 docker run ${RUN_OPTS[@]} ${IMAGE} bash -c "$(get_switch_user_cmd) ${CMD}"

@@ -57,6 +57,7 @@ Status LoadSessionBundleOrSavedModelBundle(
     return errors::Unimplemented("Session Bundle is deprecated and removed.");
   }
   if (MaybeSavedModelDirectory(export_dir)) {
+    LOG(INFO) << "****************kkq:this is from session_bundle_util.cc line 60" ;
     return LoadSavedModel(session_options, run_options, export_dir, tags,
                           bundle);
   }

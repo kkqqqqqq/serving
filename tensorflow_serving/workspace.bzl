@@ -121,11 +121,17 @@ def tf_serving_workspace():
 
     # The Boost repo is organized into git sub-modules (see the list at
     # https://github.com/boostorg/boost/tree/master/libs), which requires "new_git_repository".
-    new_git_repository(
+    #new_git_repository(
+    #    name = "org_boost",
+    #    commit = "b7b1371294b4bdfc8d85e49236ebced114bc1d8f",  # boost-1.75.0
+    #    build_file = "//third_party/boost:BUILD",
+    #    init_submodules = True,
+    #    recursive_init_submodules = True,
+    #    remote = "git@github.com:boostorg/boost.git",
+    #)
+    
+    native.new_local_repository(
         name = "org_boost",
-        commit = "b7b1371294b4bdfc8d85e49236ebced114bc1d8f",  # boost-1.75.0
+        path = "deps/boost",
         build_file = "//third_party/boost:BUILD",
-        init_submodules = True,
-        recursive_init_submodules = True,
-        remote = "https://github.com/boostorg/boost",
     )
